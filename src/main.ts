@@ -59,6 +59,6 @@ async function bootstrap() {
   } else {
     console.log(`AUTH SERVICES IS RUNNING ON PORT: ${port}`);
   }
-  console.log(`go to http://localhost:${port}/api for checking the endpoint`);
+  console.log(`go to http://localhost:${port} for checking the endpoint`);
 }
 bootstrap();
