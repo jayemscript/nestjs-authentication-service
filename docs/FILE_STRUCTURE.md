@@ -101,24 +101,15 @@ nestjs-authentication-worker/
 │   │       └── password-reset.module.ts
 │   │
 │   ├── database/
-│   │   ├── config/
-│   │   │   └── typeorm.config.ts          # Database connection config
-│   │   ├── migrations/
-│   │   │   ├── 1_create_users_table.ts
-│   │   │   ├── 2_create_sessions_table.ts
-│   │   │   ├── 3_create_password_resets_table.ts
-│   │   │   └── .gitkeep
-│   │   └── seeds/
-│   │       └── .gitkeep                   # Seed data (optional)
+│   │   ├── data-source.ts
+│   │   │   database.module.ts  
+|   |   |   database.service.ts
 │   │
 │   ├── config/
 │   │   ├── env.config.ts                  # Environment variables validation
 │   │   ├── app.config.ts                  # App-level settings
-│   │   └── database.config.ts             # Database settings
 │   │
 │   ├── app.module.ts                      # Root module
-│   ├── app.controller.ts                  # Health check endpoint
-│   ├── app.service.ts
 │   └── main.ts                            # Application bootstrap
 │
 ├── test/                                  # E2E tests (optional for MVP)

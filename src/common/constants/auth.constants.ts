@@ -1,1 +1,25 @@
 //src/common/constants/auth.constants.ts
+export const AUTH_CONSTANTS = {
+  ACCESS_TOKEN_EXPIRATION: 900,
+  REFRESH_TOKEN_EXPIRATION: 2592000,
+  COOKIE_EXPIRATION_MS: 2592000000,
+  PASSWORD_MIN_LENGTH: 8,
+  PASSWORD_MAX_LENGTH: 128,
+  MAX_LOGIN_ATTEMPTS: 5,
+  LOCK_TIME_MINUTES: 15,
+  MAX_SESSIONS_PER_USER: 5,
+  SESSION_IDLE_TIMEOUT: 60,
+
+  COOKIE_NAMES: {
+    ACCESS_TOKEN: 'auth_token',
+    REFRESH_TOKEN: 'refresh_token',
+    SESSION: 'session_id',
+  },
+
+  TOKEN_TYPES: {
+    ACCESS: 'access',
+    REFRESH: 'refresh',
+  },
+
+  JWT_ALGORITHM: 'HS256',
+};
