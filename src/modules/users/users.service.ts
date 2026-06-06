@@ -4,8 +4,11 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { UserRepository } from './repositories/user.repository';
-import { UserProfileDto } from './dtos/user-profile.dto';
-import { UpdateUserDto } from './dtos/update-user.dto';
+import {
+  UserProfileResponseDto,
+  UserProfileDto,
+} from './dtos/user-profile.dto';
+import { UpdateUserDto, UpdateUserResponseDto } from './dtos/update-user.dto';
 import { User } from './entities/user.entity';
 import { UserStatus } from 'src/common/enums/user-status.enum';
 import { HashUtil } from 'src/common/utils/hash.util';
@@ -19,20 +22,25 @@ export class UsersService {
     private readonly configService: ConfigService,
   ) {}
 
-  async getProfile(userId: string): Promise<UserProfileDto> {
+  async getProfile(userId: string): Promise<UserProfileResponseDto> {
     const user = await this.userRepository.findById(userId);
 
     if (!user) {
       throw new NotFoundException(MESSAGES.USER.NOT_FOUND);
     }
+    const userProfile = this.mapToProfileDto(user);
 
-    return this.mapToProfileDto(user);
+    return {
+      status: 200,
+      message: MESSAGES.USER.USER_PROFILE_FOUND,
+      data: userProfile,
+    };
   }
 
   async updateProfile(
     userId: string,
     updateUserDto: UpdateUserDto,
-  ): Promise<UserProfileDto> {
+  ): Promise<UpdateUserResponseDto> {
     const user = await this.userRepository.findById(userId);
 
     if (!user) {
@@ -64,7 +72,10 @@ export class UsersService {
     if (updateUserDto.password) {
       const hashedPassword = await HashUtil.hashPassword(
         updateUserDto.password,
-        parseInt(this.configService.get<string>('PASSWORD_HASH_ROUNDS') || '10', 10),
+        parseInt(
+          this.configService.get<string>('PASSWORD_HASH_ROUNDS') || '10',
+          10,
+        ),
       );
       updateData.password = hashedPassword;
     }
@@ -78,7 +89,12 @@ export class UsersService {
       throw new NotFoundException(MESSAGES.USER.NOT_FOUND);
     }
 
-    return this.mapToProfileDto(updatedUser);
+    const profileUpdate = this.mapToProfileDto(updatedUser);
+    return {
+      status: 200,
+      message: MESSAGES.USER.PROFILE_UPDATED,
+      data: profileUpdate,
+    };
   }
 
   async deactivateAccount(userId: string): Promise<{ message: string }> {

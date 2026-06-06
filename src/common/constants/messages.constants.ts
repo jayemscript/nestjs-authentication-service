@@ -20,6 +20,7 @@ export const MESSAGES = {
     ACCOUNT_LOCKED: 'Account is locked due to multiple failed login attempts',
     EMAIL_NOT_VERIFIED: 'Email not verified',
     PROFILE_UPDATED: 'Profile updated successfully',
+    USER_PROFILE_FOUND: 'User profile retrieved successfully',
   },
 
   SESSION: {

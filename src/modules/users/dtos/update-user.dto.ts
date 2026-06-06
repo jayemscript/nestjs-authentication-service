@@ -1,4 +1,6 @@
 import { IsString, IsOptional, IsEmail, MinLength } from 'class-validator';
+import { CommonResponseDto } from 'src/common/dtos/common-response.dto';
+import { UserProfileDto } from './user-profile.dto';
 
 export class UpdateUserDto {
   @IsEmail()
@@ -14,3 +16,6 @@ export class UpdateUserDto {
   @MinLength(8)
   password?: string;
 }
+
+
+export class UpdateUserResponseDto extends CommonResponseDto<UserProfileDto> {}
