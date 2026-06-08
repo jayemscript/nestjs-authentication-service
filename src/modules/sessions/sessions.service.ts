@@ -147,6 +147,10 @@ export class SessionsService {
     await this.sessionRepository.updateLastActivity(sessionId);
   }
 
+  async cleanupInvalidSessions(): Promise<number> {
+    return this.sessionRepository.cleanupInvalidSessions();
+  }
+
   private mapToSessionDto(
     session: Session,
     currentSessionId: string,

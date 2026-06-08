@@ -73,12 +73,14 @@ export class SessionRepository extends Repository<Session> {
     await this.update(id, { lastActivityAt: new Date() });
   }
 
-  async deleteExpiredSessions(before: Date): Promise<number> {
+  async cleanupInvalidSessions(): Promise<number> {
     const result = await this.createQueryBuilder()
-      .update(Session)
-      .set({ status: SessionStatus.EXPIRED })
-      .where('expires_at < :before', { before })
-      .andWhere('status = :status', { status: SessionStatus.ACTIVE })
+      .delete()
+      .from(Session)
+      .where('status IN (:...statuses)', {
+        statuses: [SessionStatus.REVOKED, SessionStatus.EXPIRED],
+      })
+      .orWhere('expires_at < :now', { now: new Date() })
       .execute();
 
     return result.affected ?? 0;

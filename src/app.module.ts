@@ -10,6 +10,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
+import { CronModule } from './modules/cron/cron.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { SessionsModule } from './modules/sessions/sessions.module';
     SessionsModule,
     DatabaseModule,
     HealthModule,
+    CronModule,
     // ThrottlerModule.forRoot([
     //   {
     //     name: 'global',
