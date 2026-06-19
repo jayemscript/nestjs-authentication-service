@@ -10,6 +10,7 @@ import { SessionsService } from './sessions.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { CurrentSession } from 'src/common/decorators/current-session.decorator';
+import { AppId } from 'src/common/decorators/app-id.decorator';
 import { Private } from 'src/common/decorators/private.decorator';
 import { ActiveSessionsResponseDto } from './dtos/session.dto';
 import { User } from '../users/entities/user.entity';
@@ -24,8 +25,9 @@ export class SessionsController {
   async getActiveSessions(
     @CurrentUser() user: User,
     @CurrentSession() sessionId: string,
+    @AppId() appId: string,
   ): Promise<ActiveSessionsResponseDto> {
-    return this.sessionsService.getActiveSessions(user.id, sessionId);
+    return this.sessionsService.getActiveSessions(user.id, sessionId, appId);
   }
 
   @Private()
@@ -33,8 +35,9 @@ export class SessionsController {
   async revokeOtherSessions(
     @CurrentUser() user: User,
     @CurrentSession() sessionId: string,
+    @AppId() appId: string,
   ): Promise<{ message: string }> {
-    return this.sessionsService.revokeOtherSessions(user.id, sessionId);
+    return this.sessionsService.revokeOtherSessions(user.id, sessionId, appId);
   }
 
   @Private()
@@ -50,7 +53,8 @@ export class SessionsController {
   @Delete('revoke-all')
   async revokeAllSessions(
     @CurrentUser() user: User,
+    @AppId() appId: string,
   ): Promise<{ message: string }> {
-    return this.sessionsService.revokeAllSessions(user.id);
+    return this.sessionsService.revokeAllSessions(user.id, appId);
   }
 }

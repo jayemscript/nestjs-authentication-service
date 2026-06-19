@@ -33,6 +33,13 @@ export const MESSAGES = {
     MAX_SESSIONS_REACHED: 'Maximum sessions reached, oldest session revoked',
   },
 
+  APP_CONTEXT: {
+    NOT_FOUND: 'Application context not found',
+    INVALID: 'Invalid or disabled application context',
+    ALREADY_EXISTS: 'Application context already exists',
+    DISABLED: 'Application context disabled successfully',
+  },
+
   VALIDATION: {
     INVALID_EMAIL: 'Invalid email format',
     INVALID_USERNAME:

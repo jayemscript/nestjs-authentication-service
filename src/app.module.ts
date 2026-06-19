@@ -11,6 +11,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { CronModule } from './modules/cron/cron.module';
+import { AppContextModule } from './modules/app-context/app-context.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CronModule } from './modules/cron/cron.module';
     AuthModule,
     UsersModule,
     SessionsModule,
+    AppContextModule,
     DatabaseModule,
     HealthModule,
     CronModule,

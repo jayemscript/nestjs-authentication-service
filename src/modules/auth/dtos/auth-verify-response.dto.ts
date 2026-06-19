@@ -5,5 +5,6 @@ export class AuthVerifyResponseDto {
     id: string;
     email: string;
     username: string;
+    appId: string;
   };
 }

@@ -11,6 +11,8 @@ import { SessionDto, ActiveSessionsResponseDto } from './dtos/session.dto';
 import { SessionStatus } from 'src/common/enums/session-status.enum';
 import { DeviceFingerprintUtil } from 'src/common/utils/device-fingerprint.util';
 import { MESSAGES } from 'src/common/constants/messages.constants';
+import { APP_CONTEXT_CONSTANTS } from 'src/common/constants/app-context.constants';
+import { ApplicationContext } from 'src/common/types/application-context.types';
 
 @Injectable()
 export class SessionsService {
@@ -19,7 +21,13 @@ export class SessionsService {
     private readonly configService: ConfigService,
   ) {}
 
-  async createSession(userId: string, req: Request): Promise<Session> {
+  async createSession(
+    userId: string,
+    req: Request,
+    applicationContext?: ApplicationContext,
+  ): Promise<Session> {
+    const appContext = applicationContext || req.application;
+    const appId = appContext?.appId || APP_CONTEXT_CONSTANTS.DEFAULT_APP_ID;
     const deviceInfo = DeviceFingerprintUtil.extractDeviceInfo(req);
     const fingerprint =
       DeviceFingerprintUtil.generateDeviceFingerprint(deviceInfo);
@@ -28,6 +36,7 @@ export class SessionsService {
       await this.sessionRepository.findByUserIdAndFingerprint(
         userId,
         fingerprint,
+        appId,
       );
 
     if (existingSession) {
@@ -35,18 +44,20 @@ export class SessionsService {
       return existingSession;
     }
 
-    const maxSessions = parseInt(
-      this.configService.get<string>('MAX_SESSIONS_PER_USER') || '5',
-      10,
-    );
+    const maxSessions =
+      appContext?.maxSessionsPerUser ??
+      parseInt(
+        this.configService.get<string>('MAX_SESSIONS_PER_USER') || '5',
+        10,
+      );
 
     if (maxSessions > 0) {
       const activeCount =
-        await this.sessionRepository.countActiveByUserId(userId);
+        await this.sessionRepository.countActiveByUserIdAndAppId(userId, appId);
 
       if (activeCount >= maxSessions) {
         const activeSessions =
-          await this.sessionRepository.findActiveByUserId(userId);
+          await this.sessionRepository.findActiveByUserIdAndAppId(userId, appId);
         const oldest = activeSessions[activeSessions.length - 1];
         if (oldest) {
           await this.sessionRepository.revokeSession(oldest.id);
@@ -54,13 +65,16 @@ export class SessionsService {
       }
     }
 
-    const refreshExpiration = parseInt(
-      this.configService.get<string>('JWT_REFRESH_EXPIRATION') || '2592000',
-      10,
-    );
+    const refreshExpiration =
+      appContext?.refreshTokenExpirationSeconds ??
+      parseInt(
+        this.configService.get<string>('JWT_REFRESH_EXPIRATION') || '2592000',
+        10,
+      );
 
     const session = await this.sessionRepository.createSession({
       userId,
+      appId,
       deviceFingerprint: fingerprint,
       deviceType: deviceInfo.deviceType,
       deviceName: deviceInfo.deviceName,
@@ -77,9 +91,11 @@ export class SessionsService {
   async getActiveSessions(
     userId: string,
     currentSessionId: string,
+    appId?: string,
   ): Promise<ActiveSessionsResponseDto> {
-    const sessions =
-      await this.sessionRepository.findActiveByUserId(userId);
+    const sessions = appId
+      ? await this.sessionRepository.findActiveByUserIdAndAppId(userId, appId)
+      : await this.sessionRepository.findActiveByUserId(userId);
 
     const sessionDtos: SessionDto[] = sessions.map((session) =>
       this.mapToSessionDto(session, currentSessionId),
@@ -111,16 +127,24 @@ export class SessionsService {
     return { message: MESSAGES.SESSION.SESSION_REVOKED };
   }
 
-  async revokeAllSessions(userId: string): Promise<{ message: string }> {
-    await this.sessionRepository.revokeAllByUserId(userId);
+  async revokeAllSessions(
+    userId: string,
+    appId?: string,
+  ): Promise<{ message: string }> {
+    await this.sessionRepository.revokeAllByUserId(userId, undefined, appId);
     return { message: MESSAGES.SESSION.ALL_SESSIONS_REVOKED };
   }
 
   async revokeOtherSessions(
     userId: string,
     currentSessionId: string,
+    appId?: string,
   ): Promise<{ message: string }> {
-    await this.sessionRepository.revokeAllByUserId(userId, currentSessionId);
+    await this.sessionRepository.revokeAllByUserId(
+      userId,
+      currentSessionId,
+      appId,
+    );
     return { message: MESSAGES.SESSION.OTHER_SESSIONS_REVOKED };
   }
 
@@ -141,6 +165,19 @@ export class SessionsService {
     }
 
     return true;
+  }
+
+  async validateSessionForApp(
+    sessionId: string,
+    appId: string,
+  ): Promise<boolean> {
+    const session = await this.sessionRepository.findById(sessionId);
+
+    if (!session || session.appId !== appId) {
+      return false;
+    }
+
+    return this.validateSession(sessionId);
   }
 
   async updateLastActivity(sessionId: string): Promise<void> {

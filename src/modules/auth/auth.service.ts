@@ -3,7 +3,6 @@ import {
   BadRequestException,
   UnauthorizedException,
   ConflictException,
-  Inject,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -16,9 +15,11 @@ import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from './dtos/register.dto';
 import { AuthResponseDto } from 'src/common/dtos/auth-response.dto';
 import { MESSAGES } from 'src/common/constants/messages.constants';
-import { AUTH_CONSTANTS } from 'src/common/constants/auth.constants';
 import { UserStatus } from 'src/common/enums/user-status.enum';
 import { AuthVerifyResponseDto } from './dtos/auth-verify-response.dto';
+import { AppContextService } from '../app-context/app-context.service';
+import { APP_CONTEXT_CONSTANTS } from 'src/common/constants/app-context.constants';
+import { ApplicationContext } from 'src/common/types/application-context.types';
 
 @Injectable()
 export class AuthService {
@@ -27,6 +28,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly sessionsService: SessionsService,
+    private readonly appContextService: AppContextService,
   ) {}
 
   async register(registerDto: RegisterDto, req: Request): Promise<AuthResponseDto> {
@@ -73,9 +75,15 @@ export class AuthService {
       status: UserStatus.ACTIVE,
     });
 
-    const session = await this.sessionsService.createSession(user.id, req);
+    const applicationContext =
+      await this.appContextService.resolveApplicationContext(req.appId);
+    const session = await this.sessionsService.createSession(
+      user.id,
+      req,
+      applicationContext,
+    );
 
-    return this.generateAuthResponse(user, session.id);
+    return this.generateAuthResponse(user, session.id, applicationContext);
   }
 
   async login(loginDto: LoginDto, req: Request): Promise<AuthResponseDto> {
@@ -142,14 +150,34 @@ export class AuthService {
       lastLoginAt: user.lastLoginAt,
     });
 
-    const session = await this.sessionsService.createSession(user.id, req);
+    const applicationContext = await this.appContextService.validateUserAccess(
+      user.id,
+      req.appId,
+    );
+    const session = await this.sessionsService.createSession(
+      user.id,
+      req,
+      applicationContext,
+    );
 
-    return this.generateAuthResponse(user, session.id);
+    return this.generateAuthResponse(user, session.id, applicationContext);
   }
 
-  async refreshToken(token: string): Promise<AuthResponseDto> {
+  async refreshToken(
+    token: string,
+    applicationContext?: ApplicationContext,
+  ): Promise<AuthResponseDto> {
     try {
       const payload = this.jwtService.verify(token);
+      const appContext =
+        applicationContext ||
+        (await this.appContextService.resolveApplicationContext(payload.appId));
+      const payloadAppId = payload.appId || APP_CONTEXT_CONSTANTS.DEFAULT_APP_ID;
+
+      if (payloadAppId !== appContext.appId) {
+        throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
+      }
+
       const user = await this.userRepository.findById(payload.id);
 
       if (!user) {
@@ -161,8 +189,9 @@ export class AuthService {
       }
 
       if (payload.sessionId) {
-        const isSessionValid = await this.sessionsService.validateSession(
+        const isSessionValid = await this.sessionsService.validateSessionForApp(
           payload.sessionId,
+          appContext.appId,
         );
         if (!isSessionValid) {
           throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
@@ -170,7 +199,7 @@ export class AuthService {
         await this.sessionsService.updateLastActivity(payload.sessionId);
       }
 
-      return this.generateAuthResponse(user, payload.sessionId);
+      return this.generateAuthResponse(user, payload.sessionId, appContext);
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
@@ -188,7 +217,10 @@ export class AuthService {
     return { message: MESSAGES.AUTH.LOGOUT_SUCCESS };
   }
 
-  async verify(userId: string): Promise<AuthVerifyResponseDto> {
+  async verify(
+    userId: string,
+    appId?: string,
+  ): Promise<AuthVerifyResponseDto> {
     const user = await this.userRepository.findById(userId);
 
     if (!user) {
@@ -199,6 +231,11 @@ export class AuthService {
       throw new UnauthorizedException(MESSAGES.USER.ACCOUNT_DEACTIVATED);
     }
 
+    const applicationContext = await this.appContextService.validateUserAccess(
+      user.id,
+      appId,
+    );
+
     return {
       status: 200,
       message: 'Token is valid',
@@ -206,25 +243,35 @@ export class AuthService {
         id: user.id,
         email: user.email,
         username: user.username,
+        appId: applicationContext.appId,
       },
     };
   }
 
-  private generateAuthResponse(user: any, sessionId?: string): AuthResponseDto {
+  private generateAuthResponse(
+    user: any,
+    sessionId?: string,
+    applicationContext?: ApplicationContext,
+  ): AuthResponseDto {
     const accessTokenExpiration = parseInt(
       this.configService.get<string>('JWT_ACCESS_EXPIRATION') || '900',
       10,
     );
-    const refreshTokenExpiration = parseInt(
-      this.configService.get<string>('JWT_REFRESH_EXPIRATION') || '2592000',
-      10,
-    );
+    const appId =
+      applicationContext?.appId || APP_CONTEXT_CONSTANTS.DEFAULT_APP_ID;
+    const refreshTokenExpiration =
+      applicationContext?.refreshTokenExpirationSeconds ??
+      parseInt(
+        this.configService.get<string>('JWT_REFRESH_EXPIRATION') || '2592000',
+        10,
+      );
 
     const accessToken = this.jwtService.sign(
       {
         id: user.id,
         email: user.email,
         username: user.username,
+        appId,
         sessionId,
       },
       { expiresIn: accessTokenExpiration },
@@ -235,6 +282,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         username: user.username,
+        appId,
         sessionId,
       },
       { expiresIn: refreshTokenExpiration },
@@ -249,8 +297,9 @@ export class AuthService {
         email: user.email,
         username: user.username,
       },
+      appId,
       message: MESSAGES.AUTH.LOGIN_SUCCESS,
       ...(sessionId ? { sessionId } : {}),
-    } as AuthResponseDto;
+    };
   }
 }

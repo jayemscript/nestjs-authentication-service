@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { MESSAGES } from '../constants/messages.constants';
 import { SessionsService } from '../../modules/sessions/sessions.service';
 import { CookieUtil } from '../utils/cookie.util';
+import { APP_CONTEXT_CONSTANTS } from '../constants/app-context.constants';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -34,7 +35,15 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = this.jwtService.verify(token);
+      const requestAppId = this.resolveRequestAppId(request);
+      const payloadAppId = payload.appId || APP_CONTEXT_CONSTANTS.DEFAULT_APP_ID;
+
+      if (payloadAppId !== requestAppId) {
+        throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
+      }
+
       request['user'] = payload;
+      request.appId = requestAppId;
       
       if (this.configService.get<string>('FEATURE_SESSION_TRACKING') === 'true') {
         if (!payload.sessionId) {
@@ -43,7 +52,10 @@ export class AuthGuard implements CanActivate {
         
         request['session'] = payload.sessionId;
         
-        const isValid = await this.sessionsService.validateSession(payload.sessionId);
+        const isValid = await this.sessionsService.validateSessionForApp(
+          payload.sessionId,
+          requestAppId,
+        );
         if (!isValid) {
           throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
         }
@@ -69,5 +81,14 @@ export class AuthGuard implements CanActivate {
     }
 
     return null;
+  }
+
+  private resolveRequestAppId(request: Request): string {
+    return (
+      request.appId ||
+      (request.headers[APP_CONTEXT_CONSTANTS.APP_ID_HEADER] as string) ||
+      (request.query['appId'] as string) ||
+      APP_CONTEXT_CONSTANTS.DEFAULT_APP_ID
+    );
   }
 }

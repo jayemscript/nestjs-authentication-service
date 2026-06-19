@@ -8,5 +8,7 @@ export class AuthResponseDto {
     email: string;
     username: string;
   };
+  appId?: string;
+  sessionId?: string;
   message?: string;
 }

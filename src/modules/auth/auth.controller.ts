@@ -7,9 +7,11 @@ import { RegisterDto } from './dtos/register.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RefreshGuard } from 'src/common/guards/refresh.guard';
+import { AppIdGuard } from 'src/common/guards/app-id.guard';
 import { CookieUtil } from 'src/common/utils/cookie.util';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { CurrentSession } from 'src/common/decorators/current-session.decorator';
+import { AppId } from 'src/common/decorators/app-id.decorator';
 import { Throttle } from '@nestjs/throttler';
 import { Private } from 'src/common/decorators/private.decorator';
 import { User } from '../users/entities/user.entity';
@@ -25,6 +27,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @UseGuards(AppIdGuard)
   // @Throttle({ auth: { ttl: 60000, limit: 10 } })
   async register(
     @Req() req: Request,
@@ -55,7 +58,7 @@ export class AuthController {
   }
 
   @Private()
-  @UseGuards(AuthGuard)
+  @UseGuards(AppIdGuard, AuthGuard)
   @Post('register-admin')
   async registerAdmin(
     @Req() req: Request,
@@ -69,6 +72,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @UseGuards(AppIdGuard)
   // @Throttle({ auth: { ttl: 60000, limit: 10 } })
   async login(
     @Req() req: Request,
@@ -100,13 +104,16 @@ export class AuthController {
 
   @Private()
   @Post('refresh')
-  @UseGuards(RefreshGuard)
+  @UseGuards(AppIdGuard, RefreshGuard)
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     const refreshToken = req.cookies['refresh_token'];
-    const result = await this.authService.refreshToken(refreshToken);
+    const result = await this.authService.refreshToken(
+      refreshToken,
+      req.application,
+    );
 
     const cookieExpiration =
       this.configService.get<number>('COOKIE_EXPIRATION') || 2592000000;
@@ -118,7 +125,7 @@ export class AuthController {
 
   @Private()
   @Post('logout')
-  @UseGuards(AuthGuard)
+  @UseGuards(AppIdGuard, AuthGuard)
   async logout(
     @CurrentSession() sessionId: string,
     @Res({ passthrough: true }) res: Response,
@@ -130,8 +137,11 @@ export class AuthController {
   }
 
   @Get('verify')
-  @UseGuards(AuthGuard)
-  async verify(@CurrentUser() user: any): Promise<AuthVerifyResponseDto> {
-    return this.authService.verify(user.id);
+  @UseGuards(AppIdGuard, AuthGuard)
+  async verify(
+    @CurrentUser() user: any,
+    @AppId() appId: string,
+  ): Promise<AuthVerifyResponseDto> {
+    return this.authService.verify(user.id, appId);
   }
 }

@@ -25,14 +25,26 @@ export class SessionRepository extends Repository<Session> {
     });
   }
 
+  async findActiveByUserIdAndAppId(
+    userId: string,
+    appId: string,
+  ): Promise<Session[]> {
+    return this.find({
+      where: { userId, appId, status: SessionStatus.ACTIVE },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async findByUserIdAndFingerprint(
     userId: string,
     fingerprint: string,
+    appId?: string,
   ): Promise<Session | null> {
     return this.findOne({
       where: {
         userId,
         deviceFingerprint: fingerprint,
+        ...(appId ? { appId } : {}),
         status: SessionStatus.ACTIVE,
       },
     });
@@ -48,6 +60,7 @@ export class SessionRepository extends Repository<Session> {
   async revokeAllByUserId(
     userId: string,
     excludeSessionId?: string,
+    appId?: string,
   ): Promise<number> {
     const qb = this.createQueryBuilder()
       .update(Session)
@@ -59,6 +72,10 @@ export class SessionRepository extends Repository<Session> {
       qb.andWhere('id != :excludeSessionId', { excludeSessionId });
     }
 
+    if (appId) {
+      qb.andWhere('app_id = :appId', { appId });
+    }
+
     const result = await qb.execute();
     return result.affected ?? 0;
   }
@@ -66,6 +83,15 @@ export class SessionRepository extends Repository<Session> {
   async countActiveByUserId(userId: string): Promise<number> {
     return this.count({
       where: { userId, status: SessionStatus.ACTIVE },
+    });
+  }
+
+  async countActiveByUserIdAndAppId(
+    userId: string,
+    appId: string,
+  ): Promise<number> {
+    return this.count({
+      where: { userId, appId, status: SessionStatus.ACTIVE },
     });
   }
 
