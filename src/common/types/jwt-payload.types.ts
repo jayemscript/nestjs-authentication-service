@@ -3,11 +3,14 @@ export interface JwtPayload {
   id: string;
   email: string;
   username: string;
-  role?: string;
   appId?: string;
   sessionId?: string;
   iat?: number;
   exp?: number;
+}
+
+export interface AppScopedJwtPayload extends JwtPayload {
+  appId: string;
 }
 
 export interface AccessTokenPayload extends JwtPayload {

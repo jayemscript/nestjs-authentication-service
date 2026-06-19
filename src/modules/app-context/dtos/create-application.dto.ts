@@ -5,15 +5,22 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   Min,
 } from 'class-validator';
+import { APP_CONTEXT_CONSTANTS } from 'src/common/constants/app-context.constants';
+import { REGEX } from 'src/common/constants/regex.constants';
 import { ApplicationStatus } from 'src/common/enums/application-status.enum';
 
 export class CreateApplicationDto {
   @IsString()
   @IsNotEmpty()
-  @MaxLength(100)
+  @MaxLength(APP_CONTEXT_CONSTANTS.APP_ID_MAX_LENGTH)
+  @Matches(REGEX.APP_ID, {
+    message:
+      'appId must contain lowercase letters, numbers, and hyphens only',
+  })
   appId!: string;
 
   @IsString()

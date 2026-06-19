@@ -225,7 +225,6 @@ export class AuthService {
         id: user.id,
         email: user.email,
         username: user.username,
-        role: user.role,
         sessionId,
       },
       { expiresIn: accessTokenExpiration },

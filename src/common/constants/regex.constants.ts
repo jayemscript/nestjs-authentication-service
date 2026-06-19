@@ -17,4 +17,6 @@ export const REGEX = {
   NUMERIC: /^\d+$/,
 
   SLUG: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+
+  APP_ID: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
 };

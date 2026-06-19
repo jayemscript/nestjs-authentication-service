@@ -1,5 +1,6 @@
 //src/common/types/request.types.ts
 import { Request } from 'express';
+import { ApplicationContext } from './application-context.types';
 
 declare global {
   namespace Express {
@@ -8,17 +9,12 @@ declare global {
         id: string;
         email: string;
         username: string;
-        role?: string;
         iat?: number;
         exp?: number;
       };
-      session?: {
-        id: string;
-        userId: string;
-        deviceFingerprint: string;
-        createdAt: Date;
-      };
+      session?: string;
       appId?: string;
+      application?: ApplicationContext;
     }
   }
 }
