@@ -3,12 +3,17 @@ import { BaseEntity } from 'src/common/entities/base-entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { SessionStatus } from 'src/common/enums/session-status.enum';
 import { DeviceType } from 'src/common/enums/device-type.enum';
+import { Application } from 'src/modules/app-context/entities/application.entity';
 
 @Entity('sessions')
 export class Session extends BaseEntity {
   @Index()
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
+
+  @Index()
+  @Column({ name: 'app_id', type: 'varchar', length: 100, default: 'legacy' })
+  appId!: string;
 
   @Column({ name: 'device_fingerprint', type: 'varchar', length: 255 })
   deviceFingerprint!: string;
@@ -50,4 +55,10 @@ export class Session extends BaseEntity {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user?: User;
+
+  @ManyToOne(() => Application, (application) => application.sessions, {
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'app_id', referencedColumnName: 'appId' })
+  application?: Application;
 }

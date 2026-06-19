@@ -5,9 +5,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DatabaseService } from './database.service';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Session } from 'src/modules/sessions/entities/session.entity';
+import { Application } from 'src/modules/app-context/entities/application.entity';
 
 
-const ENTITIES = [User, Session];
+const ENTITIES = [User, Session, Application];
 
 @Global()
 @Module({

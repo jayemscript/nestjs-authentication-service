@@ -157,6 +157,7 @@ export class SessionsService {
   ): SessionDto {
     return {
       id: session.id,
+      appId: session.appId,
       deviceType: session.deviceType,
       deviceName: session.deviceName,
       ipAddress: session.ipAddress,
