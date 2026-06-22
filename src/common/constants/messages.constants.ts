@@ -57,5 +57,6 @@ export const MESSAGES = {
     BAD_REQUEST: 'Bad request',
     INVALID_TOKEN: 'Invalid or expired token',
     TOKEN_EXPIRED: 'Token has expired',
+    SESSION_IP_MISMATCHED: 'Session validation failed. Please sign in again',
   },
 };

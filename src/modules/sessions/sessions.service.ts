@@ -57,7 +57,10 @@ export class SessionsService {
 
       if (activeCount >= maxSessions) {
         const activeSessions =
-          await this.sessionRepository.findActiveByUserIdAndAppId(userId, appId);
+          await this.sessionRepository.findActiveByUserIdAndAppId(
+            userId,
+            appId,
+          );
         const oldest = activeSessions[activeSessions.length - 1];
         if (oldest) {
           await this.sessionRepository.revokeSession(oldest.id);
@@ -203,5 +206,10 @@ export class SessionsService {
       createdAt: session.createdAt,
       isCurrent: session.id === currentSessionId,
     };
+  }
+
+  async getSessionIp(sessionId: string): Promise<string | null> {
+    const session = await this.sessionRepository.findById(sessionId);
+    return session?.ipAddress ?? null;
   }
 }
