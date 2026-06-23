@@ -11,7 +11,7 @@ export const AUTH_CONSTANTS = {
   SESSION_IDLE_TIMEOUT: 60,
 
   COOKIE_NAMES: {
-    ACCESS_TOKEN: 'auth_token',
+    ACCESS_TOKEN: 'access_token',
     REFRESH_TOKEN: 'refresh_token',
     SESSION: 'session_id',
   },

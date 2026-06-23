@@ -1,6 +1,13 @@
-import { Controller, Post, Get, Body, UseGuards, Res, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseGuards,
+  Res,
+  Req,
+} from '@nestjs/common';
 import type { Response, Request } from 'express';
-import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from './dtos/register.dto';
@@ -12,23 +19,17 @@ import { CookieUtil } from 'src/common/utils/cookie.util';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { CurrentSession } from 'src/common/decorators/current-session.decorator';
 import { AppId } from 'src/common/decorators/app-id.decorator';
-import { Throttle } from '@nestjs/throttler';
 import { Private } from 'src/common/decorators/private.decorator';
-import { User } from '../users/entities/user.entity';
 import { AuthVerifyResponseDto } from './dtos/auth-verify-response.dto';
 import { AUTH_CONSTANTS } from 'src/common/constants/auth.constants';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Public()
   @Post('register')
   @UseGuards(AppIdGuard)
-  // @Throttle({ auth: { ttl: 60000, limit: 10 } })
   async register(
     @Req() req: Request,
     @Body() registerDto: RegisterDto,
@@ -36,22 +37,22 @@ export class AuthController {
   ) {
     const result = await this.authService.register(registerDto, req);
 
-    const cookieExpiration =
-      this.configService.get<number>('COOKIE_EXPIRATION') || 2592000000;
-
-    CookieUtil.setAccessTokenCookie(res, result.accessToken, cookieExpiration);
+    CookieUtil.setAccessTokenCookie(
+      res,
+      result.accessToken,
+      AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION * 1000,
+    );
     CookieUtil.setRefreshTokenCookie(
       res,
       result.refreshToken,
-      cookieExpiration,
+      AUTH_CONSTANTS.COOKIE_EXPIRATION_MS,
     );
     if ((result as any).sessionId) {
-       res.cookie(AUTH_CONSTANTS.COOKIE_NAMES.SESSION, (result as any).sessionId, {
-         httpOnly: true,
-         secure: this.configService.get<string>('COOKIE_SECURE') === 'true',
-         sameSite: this.configService.get<string>('COOKIE_SAMESITE') as any || 'lax',
-         maxAge: cookieExpiration,
-       });
+      CookieUtil.setSessionCookie(
+        res,
+        (result as any).sessionId,
+        AUTH_CONSTANTS.COOKIE_EXPIRATION_MS,
+      );
     }
 
     return result;
@@ -60,20 +61,15 @@ export class AuthController {
   @Private()
   @UseGuards(AppIdGuard, AuthGuard)
   @Post('register-admin')
-  async registerAdmin(
-    @Req() req: Request,
-    @Body() registerDto: RegisterDto,
-  ) {
+  async registerAdmin(@Req() req: Request, @Body() registerDto: RegisterDto) {
     // Uses the same logic as register but requires an authenticated user.
     // We don't set cookies here so we don't overwrite the admin's current session.
-    const result = await this.authService.register(registerDto, req);
-    return result;
+    return this.authService.register(registerDto, req);
   }
 
   @Public()
   @Post('login')
   @UseGuards(AppIdGuard)
-  // @Throttle({ auth: { ttl: 60000, limit: 10 } })
   async login(
     @Req() req: Request,
     @Body() loginDto: LoginDto,
@@ -81,22 +77,22 @@ export class AuthController {
   ) {
     const result = await this.authService.login(loginDto, req);
 
-    const cookieExpiration =
-      this.configService.get<number>('COOKIE_EXPIRATION') || 2592000000;
-
-    CookieUtil.setAccessTokenCookie(res, result.accessToken, cookieExpiration);
+    CookieUtil.setAccessTokenCookie(
+      res,
+      result.accessToken,
+      AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION * 1000,
+    );
     CookieUtil.setRefreshTokenCookie(
       res,
       result.refreshToken,
-      cookieExpiration,
+      AUTH_CONSTANTS.COOKIE_EXPIRATION_MS,
     );
     if ((result as any).sessionId) {
-       res.cookie(AUTH_CONSTANTS.COOKIE_NAMES.SESSION, (result as any).sessionId, {
-         httpOnly: true,
-         secure: this.configService.get<string>('COOKIE_SECURE') === 'true',
-         sameSite: this.configService.get<string>('COOKIE_SAMESITE') as any || 'lax',
-         maxAge: cookieExpiration,
-       });
+      CookieUtil.setSessionCookie(
+        res,
+        (result as any).sessionId,
+        AUTH_CONSTANTS.COOKIE_EXPIRATION_MS,
+      );
     }
 
     return result;
@@ -109,16 +105,17 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = req.cookies['refresh_token'];
+    const refreshToken = req.cookies[AUTH_CONSTANTS.COOKIE_NAMES.REFRESH_TOKEN];
     const result = await this.authService.refreshToken(
       refreshToken,
       req.application,
     );
 
-    const cookieExpiration =
-      this.configService.get<number>('COOKIE_EXPIRATION') || 2592000000;
-
-    CookieUtil.setAccessTokenCookie(res, result.accessToken, cookieExpiration);
+    CookieUtil.setAccessTokenCookie(
+      res,
+      result.accessToken,
+      AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRATION * 1000,
+    );
 
     return result;
   }
@@ -130,9 +127,11 @@ export class AuthController {
     @CurrentSession() sessionId: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.logout(sessionId, res.req['user']?.id);
+    const result = await this.authService.logout(
+      sessionId,
+      res.req['user']?.id,
+    );
     CookieUtil.clearAllCookies(res);
-    res.clearCookie(AUTH_CONSTANTS.COOKIE_NAMES.SESSION);
     return result;
   }
 
