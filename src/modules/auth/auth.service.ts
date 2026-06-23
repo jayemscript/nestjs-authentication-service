@@ -16,7 +16,10 @@ import { RegisterDto } from './dtos/register.dto';
 import { AuthResponseDto } from 'src/common/dtos/auth-response.dto';
 import { MESSAGES } from 'src/common/constants/messages.constants';
 import { UserStatus } from 'src/common/enums/user-status.enum';
-import { AuthVerifyResponseDto } from './dtos/auth-verify-response.dto';
+import {
+  AuthVerifyResponseDto,
+  SessionMetaDto,
+} from './dtos/auth-verify-response.dto';
 import { AppContextService } from '../app-context/app-context.service';
 import { APP_CONTEXT_CONSTANTS } from 'src/common/constants/app-context.constants';
 import { ApplicationContext } from 'src/common/types/application-context.types';
@@ -31,7 +34,10 @@ export class AuthService {
     private readonly appContextService: AppContextService,
   ) {}
 
-  async register(registerDto: RegisterDto, req: Request): Promise<AuthResponseDto> {
+  async register(
+    registerDto: RegisterDto,
+    req: Request,
+  ): Promise<AuthResponseDto> {
     const { email, username, password, passwordConfirm } = registerDto;
 
     if (password !== passwordConfirm) {
@@ -172,7 +178,8 @@ export class AuthService {
       const appContext =
         applicationContext ||
         (await this.appContextService.resolveApplicationContext(payload.appId));
-      const payloadAppId = payload.appId || APP_CONTEXT_CONSTANTS.DEFAULT_APP_ID;
+      const payloadAppId =
+        payload.appId || APP_CONTEXT_CONSTANTS.DEFAULT_APP_ID;
 
       if (payloadAppId !== appContext.appId) {
         throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
@@ -208,7 +215,10 @@ export class AuthService {
     }
   }
 
-  async logout(sessionId?: string, userId?: string): Promise<{ message: string }> {
+  async logout(
+    sessionId?: string,
+    userId?: string,
+  ): Promise<{ message: string }> {
     if (sessionId && userId) {
       await this.sessionsService.revokeSession(sessionId, userId).catch(() => {
         // Ignore if session not found during logout
@@ -217,9 +227,12 @@ export class AuthService {
     return { message: MESSAGES.AUTH.LOGOUT_SUCCESS };
   }
 
+  // auth.service.ts
+
   async verify(
     userId: string,
     appId?: string,
+    sessionId?: string,
   ): Promise<AuthVerifyResponseDto> {
     const user = await this.userRepository.findById(userId);
 
@@ -236,6 +249,23 @@ export class AuthService {
       appId,
     );
 
+    // Explicit type so TypeScript does not collapse the ternary to never
+    let sessionMeta: SessionMetaDto | null = null;
+
+    if (sessionId) {
+      const session = await this.sessionsService.getSessionById(sessionId);
+      if (session) {
+        sessionMeta = {
+          id: session.id,
+          deviceType: session.deviceType,
+          deviceName: session.deviceName,
+          ipAddress: session.ipAddress,
+          lastActivityAt: session.lastActivityAt,
+          createdAt: session.createdAt,
+        };
+      }
+    }
+
     return {
       status: 200,
       message: 'Token is valid',
@@ -244,6 +274,8 @@ export class AuthService {
         email: user.email,
         username: user.username,
         appId: applicationContext.appId,
+        lastLoginAt: user.lastLoginAt,
+        session: sessionMeta,
       },
     };
   }

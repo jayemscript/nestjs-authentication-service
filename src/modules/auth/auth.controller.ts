@@ -140,7 +140,8 @@ export class AuthController {
   async verify(
     @CurrentUser() user: any,
     @AppId() appId: string,
+    @CurrentSession() sessionId: string, 
   ): Promise<AuthVerifyResponseDto> {
-    return this.authService.verify(user.id, appId);
+    return this.authService.verify(user.id, appId, sessionId); 
   }
 }

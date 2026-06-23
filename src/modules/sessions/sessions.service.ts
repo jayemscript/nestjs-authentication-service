@@ -212,4 +212,8 @@ export class SessionsService {
     const session = await this.sessionRepository.findById(sessionId);
     return session?.ipAddress ?? null;
   }
+
+  async getSessionById(sessionId: string): Promise<Session | null> {
+    return this.sessionRepository.findById(sessionId);
+  }
 }
