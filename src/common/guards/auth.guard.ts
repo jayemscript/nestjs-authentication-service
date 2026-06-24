@@ -1,4 +1,4 @@
-//src/common/guards/auth.guard.ts
+// src/common/guards/auth.guard.ts
 import {
   Injectable,
   CanActivate,
@@ -6,13 +6,12 @@ import {
   UnauthorizedException,
   Inject,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MESSAGES } from '../constants/messages.constants';
 import { SessionsService } from '../../modules/sessions/sessions.service';
 import { AppContextService } from '../../modules/app-context/app-context.service';
-import { CookieUtil } from '../utils/cookie.util';
 import { APP_CONTEXT_CONSTANTS } from '../constants/app-context.constants';
 
 @Injectable()
@@ -28,11 +27,9 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const response = context.switchToHttp().getResponse<Response>();
     const token = this.extractToken(request);
 
     if (!token) {
-      CookieUtil.clearAllCookies(response);
       throw new UnauthorizedException(MESSAGES.ERROR.UNAUTHORIZED);
     }
 
@@ -84,7 +81,6 @@ export class AuthGuard implements CanActivate {
               .trim() || request.ip;
 
           if (sessionIp && sessionIp !== requestIp) {
-            CookieUtil.clearAllCookies(response);
             throw new UnauthorizedException(
               MESSAGES.ERROR.SESSION_IP_MISMATCHED,
             );
@@ -97,7 +93,6 @@ export class AuthGuard implements CanActivate {
 
       return true;
     } catch (error) {
-      CookieUtil.clearAllCookies(response);
       if (error instanceof UnauthorizedException) {
         throw error;
       }
