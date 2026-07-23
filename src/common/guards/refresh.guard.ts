@@ -33,6 +33,7 @@ export class RefreshGuard implements CanActivate {
       }
 
       request['user'] = payload;
+      request['refreshToken'] = token;
       return true;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -43,7 +44,19 @@ export class RefreshGuard implements CanActivate {
   }
 
   private extractRefreshToken(request: Request): string | null {
-    return request.body?.refreshToken || null;
+    const authorization = request.headers.authorization;
+
+    if (!authorization) {
+      return null;
+    }
+
+    const [scheme, token] = authorization.split(' ');
+
+    if (scheme?.toLowerCase() !== 'bearer' || !token) {
+      return null;
+    }
+
+    return token;
   }
 
   private resolveRequestAppId(request: Request): string {
