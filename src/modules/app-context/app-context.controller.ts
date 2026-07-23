@@ -17,8 +17,8 @@ import { CreateApplicationDto } from './dtos/create-application.dto';
 import { UpdateApplicationDto } from './dtos/update-application.dto';
 
 @Controller('app-context')
-@Private()
-@UseGuards(AppIdGuard, AuthGuard)
+// @Private()
+// @UseGuards(AppIdGuard, AuthGuard)
 export class AppContextController {
   constructor(private readonly appContextService: AppContextService) {}
 
