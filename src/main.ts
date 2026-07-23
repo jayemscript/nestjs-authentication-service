@@ -40,9 +40,9 @@ async function bootstrap() {
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-  const port = Number(configService.get('PORT')) || 4000;
+  const port = Number(configService.getOrThrow('PORT'));
   await app.listen(port);
-  const nodeEnv = configService.get<string>('NODE_ENV');
+  const nodeEnv = configService.getOrThrow<string>('NODE_ENV');
 
   if (nodeEnv === 'development') {
     console.log(`SERVER IS RUNNING ON PORT: ${port}`);
