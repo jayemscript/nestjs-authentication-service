@@ -6,6 +6,7 @@ import bodyParser from 'body-parser';
 import express from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { join } from 'path';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -40,6 +41,27 @@ async function bootstrap() {
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
+  const swaggerEnabled =
+    configService.get<string>('SWAGGER_ENABLED', 'true') === 'true';
+  if (swaggerEnabled) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('NestJS Authentication Service')
+      .setDescription('Authentication and session management API')
+      .setVersion('1.0')
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+        'bearer',
+      )
+      .addApiKey(
+        { type: 'apiKey', name: 'x-app-id', in: 'header' },
+        'app-id',
+      )
+      .build();
+    const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('docs', app, swaggerDocument);
+    console.log('Swagger UI available at /docs');
+  }
+
   const port = Number(configService.getOrThrow('PORT'));
   await app.listen(port);
   const nodeEnv = configService.getOrThrow<string>('NODE_ENV');
@@ -60,5 +82,7 @@ async function bootstrap() {
     console.log(`AUTH SERVICES IS RUNNING ON PORT: ${port}`);
   }
   console.log(`go to http://localhost:${port} for checking the endpoint`);
+  console.log(`go to http://localhost:${port}/docs for web api client`);
+
 }
 bootstrap();
