@@ -93,10 +93,10 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto, req: Request): Promise<AuthResponseDto> {
-    const { emailOrUsername, password } = loginDto;
+    const { identifier, password } = loginDto;
 
     const user =
-      await this.userRepository.findByEmailOrUsername(emailOrUsername);
+      await this.userRepository.findByIdentifier(identifier);
 
     if (!user) {
       throw new UnauthorizedException(MESSAGES.AUTH.LOGIN_FAILED);

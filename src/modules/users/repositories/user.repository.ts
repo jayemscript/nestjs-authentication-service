@@ -16,12 +16,12 @@ export class UserRepository extends Repository<User> {
     return this.findOne({ where: { username } });
   }
 
-  async findByEmailOrUsername(emailOrUsername: string): Promise<User | null> {
+  async findByIdentifier(identifier: string): Promise<User | null> {
     return this.createQueryBuilder('user')
       .where(
-        'user.email = :emailOrUsername OR user.username = :emailOrUsername',
+        'user.email = :identifier OR user.username = :identifier',
         {
-          emailOrUsername,
+          identifier,
         },
       )
       .getOne();
