@@ -99,6 +99,26 @@ export class SessionRepository extends Repository<Session> {
     await this.update(id, { lastActivityAt: new Date() });
   }
 
+  async setRefreshTokenHash(id: string, refreshTokenHash: string): Promise<void> {
+    await this.update(id, { refreshTokenHash });
+  }
+
+  async rotateRefreshTokenHash(
+    id: string,
+    currentHash: string,
+    nextHash: string,
+  ): Promise<boolean> {
+    const result = await this.createQueryBuilder()
+      .update(Session)
+      .set({ refreshTokenHash: nextHash, lastActivityAt: new Date() })
+      .where('id = :id', { id })
+      .andWhere('status = :status', { status: SessionStatus.ACTIVE })
+      .andWhere('refresh_token_hash = :currentHash', { currentHash })
+      .execute();
+
+    return (result.affected ?? 0) === 1;
+  }
+
   async cleanupInvalidSessions(): Promise<number> {
     const result = await this.createQueryBuilder()
       .delete()

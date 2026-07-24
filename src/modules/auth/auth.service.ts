@@ -91,7 +91,13 @@ export class AuthService {
       applicationContext,
     );
 
-    return this.generateAuthResponse(user, session.id, applicationContext);
+    const response = this.generateAuthResponse(
+      user,
+      session.id,
+      applicationContext,
+    );
+    await this.storeRefreshToken(session.id, response.refreshToken);
+    return response;
   }
 
   async login(loginDto: LoginDto, req: Request): Promise<AuthResponseDto> {
@@ -168,7 +174,13 @@ export class AuthService {
       applicationContext,
     );
 
-    return this.generateAuthResponse(user, session.id, applicationContext);
+    const response = this.generateAuthResponse(
+      user,
+      session.id,
+      applicationContext,
+    );
+    await this.storeRefreshToken(session.id, response.refreshToken);
+    return response;
   }
 
   async refreshToken(
@@ -205,10 +217,27 @@ export class AuthService {
         if (!isSessionValid) {
           throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
         }
-        await this.sessionsService.updateLastActivity(payload.sessionId);
       }
 
-      return this.generateAuthResponse(user, payload.sessionId, appContext);
+      if (!payload.sessionId) {
+        throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
+      }
+
+      const response = this.generateAuthResponse(
+        user,
+        payload.sessionId,
+        appContext,
+      );
+      const rotated = await this.sessionsService.rotateRefreshTokenHash(
+        payload.sessionId,
+        HashUtil.hashToken(token),
+        HashUtil.hashToken(response.refreshToken),
+      );
+      if (!rotated) {
+        throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
+      }
+
+      return response;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
@@ -263,6 +292,11 @@ export class AuthService {
       refreshPayload.appId !== appId ||
       refreshPayload.sessionId !== sessionId
     ) {
+      throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
+    }
+
+    const session = await this.sessionsService.getSessionById(sessionId);
+    if (session?.refreshTokenHash !== HashUtil.hashToken(refreshToken)) {
       throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
     }
 
@@ -345,6 +379,7 @@ export class AuthService {
     const refreshToken = this.jwtService.sign(
       {
         type: AUTH_CONSTANTS.TOKEN_TYPES.REFRESH,
+        jti: HashUtil.generateRandomHash(),
         id: user.id,
         email: user.email,
         username: user.username,
@@ -367,5 +402,15 @@ export class AuthService {
       message: MESSAGES.AUTH.LOGIN_SUCCESS,
       ...(sessionId ? { sessionId } : {}),
     };
+  }
+
+  private async storeRefreshToken(
+    sessionId: string,
+    refreshToken: string,
+  ): Promise<void> {
+    await this.sessionsService.setRefreshTokenHash(
+      sessionId,
+      HashUtil.hashToken(refreshToken),
+    );
   }
 }

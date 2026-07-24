@@ -187,6 +187,25 @@ export class SessionsService {
     await this.sessionRepository.updateLastActivity(sessionId);
   }
 
+  async setRefreshTokenHash(
+    sessionId: string,
+    refreshTokenHash: string,
+  ): Promise<void> {
+    await this.sessionRepository.setRefreshTokenHash(sessionId, refreshTokenHash);
+  }
+
+  async rotateRefreshTokenHash(
+    sessionId: string,
+    currentHash: string,
+    nextHash: string,
+  ): Promise<boolean> {
+    return this.sessionRepository.rotateRefreshTokenHash(
+      sessionId,
+      currentHash,
+      nextHash,
+    );
+  }
+
   async cleanupInvalidSessions(): Promise<number> {
     return this.sessionRepository.cleanupInvalidSessions();
   }

@@ -1,5 +1,6 @@
 //src/common/utils/hash.util.ts
 import * as bcrypt from 'bcrypt';
+import { createHash, randomBytes } from 'crypto';
 
 export class HashUtil {
   static async hashPassword(
@@ -17,6 +18,10 @@ export class HashUtil {
   }
 
   static generateRandomHash(length: number = 32): string {
-    return require('crypto').randomBytes(length).toString('hex');
+    return randomBytes(length).toString('hex');
+  }
+
+  static hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 }
