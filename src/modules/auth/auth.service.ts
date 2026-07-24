@@ -25,6 +25,7 @@ import { APP_CONTEXT_CONSTANTS } from 'src/common/constants/app-context.constant
 import { ApplicationContext } from 'src/common/types/application-context.types';
 import { AUTH_CONSTANTS } from 'src/common/constants/auth.constants';
 import { RefreshTokenPayload } from 'src/common/types/jwt-payload.types';
+import { User } from 'src/modules/users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -58,30 +59,66 @@ export class AuthService {
       throw new BadRequestException(validatePassword.message);
     }
 
-    const existingEmail = await this.userRepository.findByEmail(email);
-    if (existingEmail) {
-      throw new ConflictException(MESSAGES.USER.ALREADY_EXISTS);
+    const [existingEmail, existingUsername] = await Promise.all([
+      this.userRepository.findByEmail(email),
+      this.userRepository.findByUsername(username),
+    ]);
+
+    let user: User;
+
+    if (existingEmail || existingUsername) {
+      // Users are global identities. Registration from another application
+      // must reuse the same identity and create an app-scoped session instead
+      // of attempting to insert a duplicate user.
+      if (
+        !existingEmail ||
+        !existingUsername ||
+        existingEmail.id !== existingUsername.id
+      ) {
+        throw new ConflictException(MESSAGES.USER.ALREADY_EXISTS);
+      }
+
+      user = existingEmail;
+
+      if (user.status === UserStatus.DEACTIVATED) {
+        throw new UnauthorizedException(MESSAGES.USER.ACCOUNT_DEACTIVATED);
+      }
+
+      if (user.status === UserStatus.LOCKED) {
+        throw new UnauthorizedException(MESSAGES.USER.ACCOUNT_LOCKED);
+      }
+
+      const isPasswordValid = await HashUtil.comparePassword(
+        password,
+        user.password,
+      );
+
+      if (!isPasswordValid) {
+        throw new UnauthorizedException(MESSAGES.AUTH.LOGIN_FAILED);
+      }
+
+      user.lastLoginAt = new Date();
+      await this.userRepository.updateUser(user.id, {
+        lastLoginAt: user.lastLoginAt,
+        failedLoginAttempts: 0,
+        lockedUntil: undefined,
+      });
+    } else {
+      const hashedPassword = await HashUtil.hashPassword(
+        password,
+        parseInt(
+          this.configService.get<string>('PASSWORD_HASH_ROUNDS') || '10',
+          10,
+        ),
+      );
+
+      user = await this.userRepository.createUser({
+        email,
+        username,
+        password: hashedPassword,
+        status: UserStatus.ACTIVE,
+      });
     }
-
-    const existingUsername = await this.userRepository.findByUsername(username);
-    if (existingUsername) {
-      throw new ConflictException(MESSAGES.USER.ALREADY_EXISTS);
-    }
-
-    const hashedPassword = await HashUtil.hashPassword(
-      password,
-      parseInt(
-        this.configService.get<string>('PASSWORD_HASH_ROUNDS') || '10',
-        10,
-      ),
-    );
-
-    const user = await this.userRepository.createUser({
-      email,
-      username,
-      password: hashedPassword,
-      status: UserStatus.ACTIVE,
-    });
 
     const applicationContext =
       await this.appContextService.resolveApplicationContext(req.appId);
