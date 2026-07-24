@@ -18,4 +18,4 @@ build:
 dev:
 	pnpm start:dev
 prod:
-	pnpm build & pnpm start
+	pnpm build && pnpm start
