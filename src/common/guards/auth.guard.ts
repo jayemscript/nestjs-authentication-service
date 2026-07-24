@@ -14,6 +14,7 @@ import { SessionsService } from '../../modules/sessions/sessions.service';
 import { AppContextService } from '../../modules/app-context/app-context.service';
 import { APP_CONTEXT_CONSTANTS } from '../constants/app-context.constants';
 import { AUTH_CONSTANTS } from '../constants/auth.constants';
+import { UserRepository } from '../../modules/users/repositories/user.repository';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -24,6 +25,7 @@ export class AuthGuard implements CanActivate {
     private readonly sessionsService: SessionsService,
     @Inject(AppContextService)
     private readonly appContextService: AppContextService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -45,6 +47,14 @@ export class AuthGuard implements CanActivate {
 
       if (payloadAppId !== requestAppId) {
         throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
+      }
+
+      const isMember = await this.userRepository.isMemberOfApplication(
+        payload.id,
+        requestAppId,
+      );
+      if (!isMember) {
+        throw new UnauthorizedException(MESSAGES.ERROR.FORBIDDEN);
       }
 
       request['user'] = payload;

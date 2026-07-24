@@ -122,6 +122,10 @@ export class AuthService {
 
     const applicationContext =
       await this.appContextService.resolveApplicationContext(req.appId);
+    await this.userRepository.addApplicationMembership(
+      user.id,
+      applicationContext.appId,
+    );
     const session = await this.sessionsService.createSession(
       user.id,
       req,
@@ -191,6 +195,16 @@ export class AuthService {
       throw new UnauthorizedException(MESSAGES.AUTH.LOGIN_FAILED);
     }
 
+    const applicationContext =
+      await this.appContextService.resolveApplicationContext(req.appId);
+    const isMember = await this.userRepository.isMemberOfApplication(
+      user.id,
+      applicationContext.appId,
+    );
+    if (!isMember) {
+      throw new UnauthorizedException(MESSAGES.AUTH.LOGIN_FAILED);
+    }
+
     user.failedLoginAttempts = 0;
     user.lockedUntil = undefined;
     user.lastLoginAt = new Date();
@@ -201,10 +215,6 @@ export class AuthService {
       lastLoginAt: user.lastLoginAt,
     });
 
-    const applicationContext = await this.appContextService.validateUserAccess(
-      user.id,
-      req.appId,
-    );
     const session = await this.sessionsService.createSession(
       user.id,
       req,
@@ -244,6 +254,14 @@ export class AuthService {
 
       if (user.status !== UserStatus.ACTIVE) {
         throw new UnauthorizedException(MESSAGES.USER.ACCOUNT_DEACTIVATED);
+      }
+
+      const isMember = await this.userRepository.isMemberOfApplication(
+        user.id,
+        appContext.appId,
+      );
+      if (!isMember) {
+        throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
       }
 
       if (payload.sessionId) {
@@ -345,6 +363,14 @@ export class AuthService {
 
     if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException(MESSAGES.USER.ACCOUNT_DEACTIVATED);
+    }
+
+    const isMember = await this.userRepository.isMemberOfApplication(
+      user.id,
+      appId,
+    );
+    if (!isMember) {
+      throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
     }
 
     const applicationContext = await this.appContextService.validateUserAccess(

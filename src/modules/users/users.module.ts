@@ -7,10 +7,11 @@ import { User } from './entities/user.entity';
 import { Session } from '../sessions/entities/session.entity';
 import { SessionsModule } from '../sessions/sessions.module';
 import { AppContextModule } from '../app-context/app-context.module';
+import { UserApplication } from './entities/user-application.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Session]),
+    TypeOrmModule.forFeature([User, Session, UserApplication]),
     SessionsModule,
     AppContextModule,
   ],

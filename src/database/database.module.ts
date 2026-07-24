@@ -6,9 +6,10 @@ import { DatabaseService } from './database.service';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Session } from 'src/modules/sessions/entities/session.entity';
 import { Application } from 'src/modules/app-context/entities/application.entity';
+import { UserApplication } from 'src/modules/users/entities/user-application.entity';
 
 
-const ENTITIES = [User, Session, Application];
+const ENTITIES = [User, Session, Application, UserApplication];
 
 @Global()
 @Module({

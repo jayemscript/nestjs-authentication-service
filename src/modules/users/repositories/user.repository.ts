@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
+import { UserApplication } from '../entities/user-application.entity';
 
 @Injectable()
 export class UserRepository extends Repository<User> {
@@ -34,6 +35,20 @@ export class UserRepository extends Repository<User> {
   async createUser(data: Partial<User>): Promise<User> {
     const user = this.create(data);
     return this.save(user);
+  }
+
+  async isMemberOfApplication(userId: string, appId: string): Promise<boolean> {
+    const membership = await this.dataSource
+      .getRepository(UserApplication)
+      .findOne({ where: { userId, appId } });
+
+    return !!membership;
+  }
+
+  async addApplicationMembership(userId: string, appId: string): Promise<void> {
+    await this.dataSource
+      .getRepository(UserApplication)
+      .upsert({ userId, appId }, ['userId', 'appId']);
   }
 
   async updateUser(id: string, data: Partial<User>): Promise<User | null> {
