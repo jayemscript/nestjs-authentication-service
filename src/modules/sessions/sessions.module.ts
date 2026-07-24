@@ -5,11 +5,13 @@ import { SessionsService } from './sessions.service';
 import { SessionRepository } from './repositories/session.repository';
 import { Session } from './entities/session.entity';
 import { AppContextModule } from '../app-context/app-context.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Session]),
     forwardRef(() => AppContextModule),
+    forwardRef(() => UsersModule),
   ],
   controllers: [SessionsController],
   providers: [SessionsService, SessionRepository],
