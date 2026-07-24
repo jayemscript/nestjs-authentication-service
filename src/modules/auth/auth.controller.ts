@@ -1,5 +1,13 @@
 // src/modules/auth/auth.controller.ts
-import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseGuards,
+  Req,
+  Headers,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
@@ -13,6 +21,7 @@ import { CurrentSession } from 'src/common/decorators/current-session.decorator'
 import { AppId } from 'src/common/decorators/app-id.decorator';
 import { Private } from 'src/common/decorators/private.decorator';
 import { AuthVerifyResponseDto } from './dtos/auth-verify-response.dto';
+import { AUTH_CONSTANTS } from 'src/common/constants/auth.constants';
 
 @Controller('auth')
 export class AuthController {
@@ -60,7 +69,8 @@ export class AuthController {
     @CurrentUser() user: any,
     @AppId() appId: string,
     @CurrentSession() sessionId: string,
+    @Headers(AUTH_CONSTANTS.HEADERS.REFRESH_TOKEN) refreshToken?: string,
   ): Promise<AuthVerifyResponseDto> {
-    return this.authService.verify(user.id, appId, sessionId);
+    return this.authService.verify(user.id, appId, sessionId, refreshToken);
   }
 }

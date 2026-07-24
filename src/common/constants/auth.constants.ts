@@ -16,6 +16,10 @@ export const AUTH_CONSTANTS = {
     SESSION: 'session_id',
   },
 
+  HEADERS: {
+    REFRESH_TOKEN: 'x-refresh-token',
+  },
+
   TOKEN_TYPES: {
     ACCESS: 'access',
     REFRESH: 'refresh',

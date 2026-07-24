@@ -7,6 +7,7 @@ export interface JwtPayload {
   sessionId?: string;
   iat?: number;
   exp?: number;
+  type?: string;
 }
 
 export interface AppScopedJwtPayload extends JwtPayload {

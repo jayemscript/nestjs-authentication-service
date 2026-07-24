@@ -12,3 +12,10 @@ show_migration:
 
 revert_migration:
 	npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts
+
+build:
+	pnpm build
+dev:
+	pnpm start:dev
+prod:
+	pnpm build & pnpm start

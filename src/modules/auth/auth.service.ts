@@ -23,6 +23,8 @@ import {
 import { AppContextService } from '../app-context/app-context.service';
 import { APP_CONTEXT_CONSTANTS } from 'src/common/constants/app-context.constants';
 import { ApplicationContext } from 'src/common/types/application-context.types';
+import { AUTH_CONSTANTS } from 'src/common/constants/auth.constants';
+import { RefreshTokenPayload } from 'src/common/types/jwt-payload.types';
 
 @Injectable()
 export class AuthService {
@@ -233,7 +235,37 @@ export class AuthService {
     userId: string,
     appId?: string,
     sessionId?: string,
+    refreshToken?: string,
   ): Promise<AuthVerifyResponseDto> {
+    if (!appId || !sessionId || !refreshToken) {
+      throw new UnauthorizedException(MESSAGES.ERROR.UNAUTHORIZED);
+    }
+
+    const isSessionValid = await this.sessionsService.validateSessionForApp(
+      sessionId,
+      appId,
+    );
+    if (!isSessionValid) {
+      throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
+    }
+
+    let refreshPayload: RefreshTokenPayload;
+    try {
+      refreshPayload =
+        this.jwtService.verify<RefreshTokenPayload>(refreshToken);
+    } catch {
+      throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
+    }
+
+    if (
+      refreshPayload.type !== AUTH_CONSTANTS.TOKEN_TYPES.REFRESH ||
+      refreshPayload.id !== userId ||
+      refreshPayload.appId !== appId ||
+      refreshPayload.sessionId !== sessionId
+    ) {
+      throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
+    }
+
     const user = await this.userRepository.findById(userId);
 
     if (!user) {
@@ -300,6 +332,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(
       {
+        type: AUTH_CONSTANTS.TOKEN_TYPES.ACCESS,
         id: user.id,
         email: user.email,
         username: user.username,
@@ -311,6 +344,7 @@ export class AuthService {
 
     const refreshToken = this.jwtService.sign(
       {
+        type: AUTH_CONSTANTS.TOKEN_TYPES.REFRESH,
         id: user.id,
         email: user.email,
         username: user.username,

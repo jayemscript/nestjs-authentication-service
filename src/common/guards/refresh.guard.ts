@@ -9,6 +9,7 @@ import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { MESSAGES } from '../constants/messages.constants';
 import { APP_CONTEXT_CONSTANTS } from '../constants/app-context.constants';
+import { AUTH_CONSTANTS } from '../constants/auth.constants';
 
 @Injectable()
 export class RefreshGuard implements CanActivate {
@@ -24,6 +25,9 @@ export class RefreshGuard implements CanActivate {
 
     try {
       const payload = this.jwtService.verify(token);
+      if (payload.type !== AUTH_CONSTANTS.TOKEN_TYPES.REFRESH) {
+        throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
+      }
       const requestAppId = this.resolveRequestAppId(request);
       const payloadAppId =
         payload.appId || APP_CONTEXT_CONSTANTS.DEFAULT_APP_ID;
