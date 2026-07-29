@@ -52,10 +52,7 @@ async function bootstrap() {
         { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
         'bearer',
       )
-      .addApiKey(
-        { type: 'apiKey', name: 'x-app-id', in: 'header' },
-        'app-id',
-      )
+      .addApiKey({ type: 'apiKey', name: 'x-app-id', in: 'header' }, 'app-id')
       .build();
     const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup('docs', app, swaggerDocument);
@@ -67,13 +64,13 @@ async function bootstrap() {
   const nodeEnv = configService.getOrThrow<string>('NODE_ENV');
 
   if (nodeEnv === 'development') {
-    console.log(`SERVER IS RUNNING ON PORT: ${port}`);
+    console.log(`AUTH SERVICES IS RUNNING: ${port}`);
     console.log(`MODE:${nodeEnv}`);
   } else if (nodeEnv === 'production') {
-    console.log(`SERVER IS RUNNING ON PORT: ${port}`);
+    console.log(`AUTH SERVICES IS RUNNING: ${port}`);
     console.log(`MODE:${nodeEnv}`);
   } else if (nodeEnv === 'maintenance') {
-    console.log(`SERVER IS RUNNING ON PORT: ${port}`);
+    console.log(`AUTH SERVICES IS RUNNING: ${port}`);
     console.log(`MODE:${nodeEnv}`);
     console.log(
       'The system is currently under maintenance. Please try again later.',
@@ -83,6 +80,5 @@ async function bootstrap() {
   }
   console.log(`go to http://localhost:${port} for checking the endpoint`);
   console.log(`go to http://localhost:${port}/docs for web api client`);
-
 }
 bootstrap();
