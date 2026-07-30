@@ -31,7 +31,7 @@ export class UsersController {
   @Private()
   @Get('profile')
   async getProfile(@CurrentUser() user: User): Promise<UserProfileResponseDto> {
-    return this.usersService.getProfile(user.id);
+    return this.queryUserService.getAccountProfile(user.id);
   }
 
   @Private()

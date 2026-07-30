@@ -4,10 +4,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { UserRepository } from '../repositories/user.repository';
-import {
-  UserProfileResponseDto,
-  UserProfileDto,
-} from '../dtos/user-profile.dto';
 import { UpdateUserDto, UpdateUserResponseDto } from '../dtos/update-user.dto';
 import { User } from '../entities/user.entity';
 import { UserStatus } from 'src/common/enums/user-status.enum';
@@ -21,21 +17,6 @@ export class UsersService {
     private readonly userRepository: UserRepository,
     private readonly configService: ConfigService,
   ) {}
-
-  async getProfile(userId: string): Promise<UserProfileResponseDto> {
-    const user = await this.userRepository.findById(userId);
-
-    if (!user) {
-      throw new NotFoundException(MESSAGES.USER.NOT_FOUND);
-    }
-    const userProfile = this.mapToProfileDto(user);
-
-    return {
-      status: 200,
-      message: MESSAGES.USER.USER_PROFILE_FOUND,
-      data: userProfile,
-    };
-  }
 
   async updateProfile(
     userId: string,
@@ -89,11 +70,18 @@ export class UsersService {
       throw new NotFoundException(MESSAGES.USER.NOT_FOUND);
     }
 
-    const profileUpdate = this.mapToProfileDto(updatedUser);
     return {
       status: 200,
       message: MESSAGES.USER.PROFILE_UPDATED,
-      data: profileUpdate,
+      data: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        status: updatedUser.status,
+        lastLoginAt: updatedUser.lastLoginAt,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt,
+      },
     };
   }
 
@@ -109,17 +97,5 @@ export class UsersService {
     });
 
     return { message: 'Account deactivated successfully' };
-  }
-
-  private mapToProfileDto(user: User): UserProfileDto {
-    return {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      status: user.status,
-      lastLoginAt: user.lastLoginAt,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
   }
 }
