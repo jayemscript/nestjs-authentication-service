@@ -64,19 +64,30 @@ export class QueryUserService {
       }
     }
 
-    return this.paginationService.paginate(this.userRepository, 'user', {
-      page: page || 1,
-      limit: limit || 10,
-      keyword: keyword || '',
-      searchableFields: ['id', 'username', 'email'],
-      sortableFields: ['username', 'email'],
-      sortBy: (sortBy?.trim() as keyof User) || 'createdAt',
-      sortOrder: sortOrder || 'desc',
-      dataKey: 'users_data',
-      relations: ['sessions', 'userApplications'],
-      filters: parsedFilters,
-      withDeleted: true,
-    });
+    const result = await this.paginationService.paginate(
+      this.userRepository,
+      'user',
+      {
+        page: page || 1,
+        limit: limit || 10,
+        keyword: keyword || '',
+        searchableFields: ['id', 'username', 'email'],
+        sortableFields: ['username', 'email'],
+        sortBy: (sortBy?.trim() as keyof User) || 'createdAt',
+        sortOrder: sortOrder || 'desc',
+        dataKey: 'users_data',
+        relations: ['sessions', 'userApplications'],
+        filters: parsedFilters,
+        withDeleted: true,
+      },
+    );
+
+    return {
+      ...result,
+      users_data: result.users_data.map((user: User) =>
+        this.mapToProfileDto(user),
+      ),
+    };
   }
 
   private mapToProfileDto(user: User): UserProfileDto {

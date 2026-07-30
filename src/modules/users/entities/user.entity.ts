@@ -12,7 +12,7 @@ export class User extends BaseEntity {
   @Column({ name: 'username', type: 'varchar', length: 50, unique: true })
   username!: string;
 
-  @Column({ name: 'password', type: 'varchar', length: 255, select: false })
+  @Column({ name: 'password', type: 'varchar', length: 255 })
   password!: string;
 
   @Column({
@@ -35,9 +35,6 @@ export class User extends BaseEntity {
   @OneToMany(() => Session, (session) => session.user)
   sessions?: Session[];
 
-  @OneToMany(
-    () => UserApplication,
-    (userApplication) => userApplication.user,
-  )
+  @OneToMany(() => UserApplication, (userApplication) => userApplication.user)
   userApplications?: UserApplication[];
 }
