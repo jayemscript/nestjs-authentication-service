@@ -11,7 +11,11 @@ export class UserApplication {
   @PrimaryColumn({ name: 'app_id', type: 'varchar', length: 100 })
   appId!: string;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(
+    () => User,
+    (user) => user.userApplications,
+    { onDelete: 'CASCADE' },
+  )
   @JoinColumn({ name: 'user_id' })
   user?: User;
 

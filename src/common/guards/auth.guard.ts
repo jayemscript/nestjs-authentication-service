@@ -41,9 +41,13 @@ export class AuthGuard implements CanActivate {
       if (payload.type !== AUTH_CONSTANTS.TOKEN_TYPES.ACCESS) {
         throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
       }
-      const requestAppId = this.resolveRequestAppId(request);
       const payloadAppId =
         payload.appId || APP_CONTEXT_CONSTANTS.DEFAULT_APP_ID;
+      // The access token is already scoped to an application. Use that
+      // application when the endpoint does not receive an explicit app id.
+      // An explicit header/query value is still checked below, so a token
+      // cannot be used against a different application.
+      const requestAppId = this.resolveRequestAppId(request, payloadAppId);
 
       if (payloadAppId !== requestAppId) {
         throw new UnauthorizedException(MESSAGES.ERROR.INVALID_TOKEN);
@@ -122,12 +126,12 @@ export class AuthGuard implements CanActivate {
     return null;
   }
 
-  private resolveRequestAppId(request: Request): string {
+  private resolveRequestAppId(request: Request, tokenAppId: string): string {
     return (
       request.appId ||
       (request.headers[APP_CONTEXT_CONSTANTS.APP_ID_HEADER] as string) ||
       (request.query['appId'] as string) ||
-      APP_CONTEXT_CONSTANTS.DEFAULT_APP_ID
+      tokenAppId
     );
   }
 }

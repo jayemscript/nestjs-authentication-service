@@ -12,6 +12,7 @@ import { UsersModule } from './modules/users/users.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { CronModule } from './modules/cron/cron.module';
 import { AppContextModule } from './modules/app-context/app-context.module';
+import { PaginationModule } from './common/modules/pagination.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AppContextModule } from './modules/app-context/app-context.module';
     DatabaseModule,
     HealthModule,
     CronModule,
+    PaginationModule,
     // ThrottlerModule.forRoot([
     //   {
     //     name: 'global',

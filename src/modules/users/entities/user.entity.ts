@@ -1,6 +1,8 @@
-import { Entity, Column } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { UserStatus } from 'src/common/enums/user-status.enum';
 import { BaseEntity } from 'src/common/entities/base-entity';
+import { Session } from 'src/modules/sessions/entities/session.entity';
+import { UserApplication } from './user-application.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -10,7 +12,7 @@ export class User extends BaseEntity {
   @Column({ name: 'username', type: 'varchar', length: 50, unique: true })
   username!: string;
 
-  @Column({ name: 'password', type: 'varchar', length: 255 })
+  @Column({ name: 'password', type: 'varchar', length: 255, select: false })
   password!: string;
 
   @Column({
@@ -29,4 +31,13 @@ export class User extends BaseEntity {
 
   @Column({ name: 'locked_until', type: 'timestamp', nullable: true })
   lockedUntil?: Date;
+
+  @OneToMany(() => Session, (session) => session.user)
+  sessions?: Session[];
+
+  @OneToMany(
+    () => UserApplication,
+    (userApplication) => userApplication.user,
+  )
+  userApplications?: UserApplication[];
 }

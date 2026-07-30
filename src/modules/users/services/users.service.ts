@@ -3,13 +3,13 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { UserRepository } from './repositories/user.repository';
+import { UserRepository } from '../repositories/user.repository';
 import {
   UserProfileResponseDto,
   UserProfileDto,
-} from './dtos/user-profile.dto';
-import { UpdateUserDto, UpdateUserResponseDto } from './dtos/update-user.dto';
-import { User } from './entities/user.entity';
+} from '../dtos/user-profile.dto';
+import { UpdateUserDto, UpdateUserResponseDto } from '../dtos/update-user.dto';
+import { User } from '../entities/user.entity';
 import { UserStatus } from 'src/common/enums/user-status.enum';
 import { HashUtil } from 'src/common/utils/hash.util';
 import { ConfigService } from '@nestjs/config';

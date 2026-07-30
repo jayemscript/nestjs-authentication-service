@@ -55,7 +55,7 @@ export class Session extends BaseEntity {
   @Column({ name: 'refresh_token_hash', type: 'varchar', length: 64, nullable: true })
   refreshTokenHash?: string;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.sessions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user?: User;
 
