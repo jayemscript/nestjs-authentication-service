@@ -34,11 +34,13 @@ export class QueryUserService {
       throw new NotFoundException(MESSAGES.USER.NOT_FOUND);
     }
 
-    return {
-      status: 200,
-      message: MESSAGES.USER.USER_PROFILE_FOUND,
-      data: this.mapToProfileDto(user),
-    };
+    // return {
+    //   status: 200,
+    //   message: MESSAGES.USER.USER_PROFILE_FOUND,
+    //   data: this.mapToProfileDto(user),
+    // };
+
+    return this.mapToProfileDto(user);
   }
 
   async getAllUsers(

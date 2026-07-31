@@ -14,4 +14,4 @@ export class UserProfileDto {
   userApplications?: UserApplication[];
 }
 
-export class UserProfileResponseDto extends CommonResponseDto<UserProfileDto> {}
+export class UserProfileResponseDto extends UserProfileDto {}
