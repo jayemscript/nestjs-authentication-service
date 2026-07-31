@@ -26,19 +26,15 @@ export class QueryUserService {
       where: { id: userId },
       relations: {
         sessions: true,
-        userApplications: true,
+        userApplications: {
+          application: true,
+        },
       },
     });
 
     if (!user) {
       throw new NotFoundException(MESSAGES.USER.NOT_FOUND);
     }
-
-    // return {
-    //   status: 200,
-    //   message: MESSAGES.USER.USER_PROFILE_FOUND,
-    //   data: this.mapToProfileDto(user),
-    // };
 
     return this.mapToProfileDto(user);
   }
@@ -78,7 +74,7 @@ export class QueryUserService {
         sortBy: (sortBy?.trim() as keyof User) || 'createdAt',
         sortOrder: sortOrder || 'desc',
         dataKey: 'users_data',
-        relations: ['sessions', 'userApplications'],
+        relations: ['sessions', 'userApplications.application'],
         filters: parsedFilters,
         withDeleted: true,
       },
