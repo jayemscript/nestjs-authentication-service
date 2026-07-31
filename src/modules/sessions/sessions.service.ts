@@ -32,17 +32,21 @@ export class SessionsService {
     const fingerprint =
       DeviceFingerprintUtil.generateDeviceFingerprint(deviceInfo);
 
-    const existingSession =
-      await this.sessionRepository.findByUserIdAndFingerprint(
-        userId,
-        fingerprint,
-        appId,
-      );
-
-    if (existingSession) {
-      await this.sessionRepository.updateLastActivity(existingSession.id);
-      return existingSession;
-    }
+    // !WARNING: Deprecated session-reuse logic. Do not re-enable without
+    // supporting multiple refresh tokens per session or explicitly revoking
+    // the previous login. User-agent + IP cannot distinguish normal and
+    // incognito browsers, so this can invalidate the first browser's token.
+    // const existingSession =
+    //   await this.sessionRepository.findByUserIdAndFingerprint(
+    //     userId,
+    //     fingerprint,
+    //     appId,
+    //   );
+    //
+    // if (existingSession) {
+    //   await this.sessionRepository.updateLastActivity(existingSession.id);
+    //   return existingSession;
+    // }
 
     const maxSessions =
       appContext?.maxSessionsPerUser ??
