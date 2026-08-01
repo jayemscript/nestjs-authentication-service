@@ -8,6 +8,7 @@ import {
   Delete,
   Req,
   Query,
+  Param,
 } from '@nestjs/common';
 import { UsersService, QueryUserService } from './services';
 import { AuthGuard } from 'src/common/guards/auth.guard';
@@ -49,6 +50,21 @@ export class UsersController {
     @CurrentUser() user: User,
   ): Promise<{ message: string }> {
     return this.usersService.deactivateAccount(user.id);
+  }
+
+  @Put('admin/:userId')
+  async adminUpdateUser(
+    @Param('userId') userId: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<UpdateUserResponseDto> {
+    return this.usersService.updateProfile(userId, updateUserDto);
+  }
+
+  @Delete('admin/:userId')
+  async adminDeactivateUser(
+    @Param('userId') userId: string,
+  ): Promise<{ message: string }> {
+    return this.usersService.deactivateAccount(userId);
   }
 
   @Get('all')
