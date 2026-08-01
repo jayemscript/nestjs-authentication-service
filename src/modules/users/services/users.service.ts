@@ -98,4 +98,18 @@ export class UsersService {
 
     return { message: 'Account deactivated successfully' };
   }
+
+  async activateAccount(userId: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException(MESSAGES.USER.NOT_FOUND);
+    }
+
+    await this.userRepository.updateUser(userId, {
+      status: UserStatus.ACTIVE,
+    });
+
+    return { message: 'Account activated successfully' };
+  }
 }

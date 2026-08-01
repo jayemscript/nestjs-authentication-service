@@ -67,6 +67,13 @@ export class UsersController {
     return this.usersService.deactivateAccount(userId);
   }
 
+  @Put('admin/:userId/activate')
+  async adminActivateUser(
+    @Param('userId') userId: string,
+  ): Promise<{ message: string }> {
+    return this.usersService.activateAccount(userId);
+  }
+
   @Get('all')
   async getAllUsers(
     @Query('page') page?: string,
