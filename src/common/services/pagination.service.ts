@@ -115,24 +115,36 @@ export class PaginationService<T extends ObjectLiteral> {
         if (value === undefined || value === null) return;
 
         if (field.includes('.')) {
-          // relation.field
-          const [relation, relField] = field.split('.');
-          if (!relations.includes(relation)) {
+          // Support nested relation paths, for example:
+          // userApplications.application.appId
+          const fieldParts = field.split('.');
+          const relField = fieldParts.pop()!;
+          const relationPath = fieldParts.join('.');
+          const relationAlias = relationPath.replace(/\./g, '_');
+
+          // Relation joins use aliases generated from the full relation path.
+          // For example, userApplications.application becomes
+          // userApplications_application.
+          if (
+            !qb.expressionMap.joinAttributes.some(
+              (join) => join.alias.name === relationAlias,
+            )
+          ) {
             throw new BadRequestException(
-              `Relation '${relation}' must be included in 'relations'`,
+              `Relation '${relationPath}' must be included in 'relations'`,
             );
           }
 
           if (Array.isArray(value)) {
             qb = qb.andWhere(
-              `${relation}.${relField} IN (:...${relation}_${relField})`,
-              { [`${relation}_${relField}`]: value },
+              `${relationAlias}.${relField} IN (:...${relationAlias}_${relField})`,
+              { [`${relationAlias}_${relField}`]: value },
             );
           } else {
             qb = qb.andWhere(
-              `${relation}.${relField} = :${relation}_${relField}`,
+              `${relationAlias}.${relField} = :${relationAlias}_${relField}`,
               {
-                [`${relation}_${relField}`]: value,
+                [`${relationAlias}_${relField}`]: value,
               },
             );
           }
